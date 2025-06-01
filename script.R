@@ -671,27 +671,26 @@ col_up   <- "#2ca02c"   # green
 col_down <- "#d62728"   # red
 
 p_arrow_total <- ggplot(total_arrow_data, aes(x = Subject)) +
-  geom_point(aes(y = `2018`, shape = "2018", color = "2018"), size = 5, show.legend = TRUE) +
+  geom_point(aes(y = `2018`, shape = "2018", color = "2018"), size = 5) +
   geom_point(data = subset(total_arrow_data, Change >= 0),
-             aes(y = `2022`, shape = "2022", color = "2022"), size = 5, show.legend = TRUE) +
+             aes(y = `2022`, shape = "2022", color = "2022"), size = 5) +
   geom_point(data = subset(total_arrow_data, Change < 0),
-             aes(y = `2022`, shape = factor(25)), color = col_down, fill = col_down, size = 6, show.legend = FALSE) +
+             aes(y = `2022`, shape = "down_triangle", color = "down_triangle"), size = 6) +
   geom_text(aes(y = `2018`, label = round(`2018`, 1)), vjust = 1.7, size = 4, color = col_2018, fontface = "bold") +
   geom_text(aes(y = `2022`, label = round(`2022`, 1)), vjust = -1.2, size = 4, color = col_down, fontface = "bold") +
   scale_color_manual(
-    name = "Year/Change",
-    values = c("2018" = col_2018, "2022" = col_2022, col_up, col_down),
-    breaks = c("2018", "2022"),
-    labels = c("2018", "2022")
+    name = "Year",
+    values = c("2018" = col_2018, "2022" = col_2022, "down_triangle" = col_down),
+    labels = c("2018", "2022 (change: increase)", "2022 (change: decrease)")
   ) +
   scale_shape_manual(
     name = "Year",
-    values = c("2018" = 16, "2022" = 17, "25" = 25),
-    labels = c("2018", "2022")
+    values = c("2018" = 16, "2022" = 17, "down_triangle" = 25),
+    labels = c("2018", "2022 (change: increase)", "2022 (change: decrease)")
   ) +
   labs(
-    title = "Change in PISA Subject Scores: 2018 to 2022 (Total)",
-    x = "Subject",
+    title = "Change in PISA Subject and Total Scores: 2018 to 2022",
+    x = "Subject (and Total)",
     y = "Mean Score"
   ) +
   theme_minimal(base_size = 16) +
