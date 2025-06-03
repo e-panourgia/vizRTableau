@@ -1,11 +1,13 @@
-# Load required libraries
+# intall packages # Load required libraries
 suppressPackageStartupMessages({
     library(dplyr)
     library(ggplot2)
     library(tidyr)
     library(knitr)
     library(grid)
-  library(gridExtra)
+    library(gridExtra)
+    library(fs)
+    library(tidyverse)
 })
 
 ### Load and Explore Data for 2018 
@@ -647,10 +649,67 @@ p_greece_change <- ggplot(score_change, aes(x = Subject, y = Change, fill = Gend
   )
 
 # Save to figures
-ggsave("figures/ploy_6_score_change_greece_2018_2022.png", plot = p_greece_change,
+ggsave("figures/plot_6_score_change_greece_2018_2022.png", plot = p_greece_change,
        width = 10, height = 6, dpi = 300, bg = "white")
 cat("✅ Plot 6 saved to: figures/ploy_6_score_change_greece_2018_2022.png\n")
-# End Plot 6 : ================================================================
+# End Plot 6: ================================================================
+
+# --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
+# Load required packages (install first if needed)
+
+# Compute mean scores by gender and subject for each year
+get_mean_scores <- function(data, year_label) {
+  data %>%
+    pivot_longer(cols = c(MATH, READ, SCIE), names_to = "Subject", values_to = "Score") %>%
+    mutate(Gender = ST004D01T) %>%
+    group_by(CNT, Gender, Subject) %>%
+    summarise(Mean = mean(Score, na.rm = TRUE), .groups = "drop") %>%
+    mutate(Year = year_label)
+}
+
+mean_2018 <- get_mean_scores(data_2018, "2018")
+mean_2022 <- get_mean_scores(data_2022, "2022")
+
+# Combine and calculate change
+score_changes <- bind_rows(mean_2018, mean_2022) %>%
+  pivot_wider(names_from = Year, values_from = Mean) %>%
+  mutate(Change = `2022` - `2018`) %>%
+  drop_na(CNT, Gender, Subject, Change) %>%
+  filter(Change != 0) %>%
+  mutate(Combo = paste(Gender, Subject, sep = "_"),
+         IsGreece = CNT == "Greece")
+
+# Order countries by average change for visual consistency
+score_changes <- score_changes %>%
+  group_by(CNT) %>%
+  mutate(AvgChange = mean(Change, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(CNT = reorder(CNT, AvgChange))
+
+# Create output folder
+dir_create("figures")
+
+# Plot
+p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
+  geom_tile(aes(color = IsGreece), width = 1, height = 1, linewidth = 0.8) +
+  scale_fill_gradient2(low = "firebrick", mid = "white", high = "darkgreen", midpoint = 0, name = "Score Change") +
+  scale_color_manual(values = c("TRUE" = "blue", "FALSE" = NA), guide = "none") +
+  labs(title = "Score Change (2018–2022) by Country, Gender, and Subject", x = "Gender–Subject", y = NULL) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 9),
+    panel.grid = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "right"
+  )
+
+# Save plot
+ggsave("figures/plot_7_all_gender_subject_score_change.png", plot = p, width = 11, height = 13, dpi = 300, bg = "white")
+cat("✅ Plot 7 saved to: figures/plot_7_all_gender_subject_score_change.png\n")
+# End Plot 7 : ================================================================
 
 # --- PLOT X:  ---
 # End Plot X : ================================================================
@@ -661,11 +720,6 @@ cat("✅ Plot 6 saved to: figures/ploy_6_score_change_greece_2018_2022.png\n")
 # --- PLOT X:  ---
 # End Plot X : ================================================================
 
-# --- PLOT X:  ---
-# End Plot X : ================================================================
-
-# --- PLOT X:  ---
-# End Plot X : ================================================================
 
 
 
@@ -675,6 +729,37 @@ cat("✅ Plot 6 saved to: figures/ploy_6_score_change_greece_2018_2022.png\n")
 
 
 
+library(dplyr)
+
+# Assuming data_2018 is already loaded and preprocessed with columns: CNT, MATH, READ, SCIE
+
+# Compute average scores per country
+country_averages_2018 <- data_2018 %>%
+  group_by(CNT) %>%
+  summarise(
+    Math = mean(MATH, na.rm = TRUE),
+    Reading = mean(READ, na.rm = TRUE),
+    Science = mean(SCIE, na.rm = TRUE),
+    Total = rowMeans(cbind(Math, Reading, Science), na.rm = TRUE) # Will be overwritten below, better to compute separately
+  ) %>%
+  # Correct way to calculate Total as mean of the three columns per country
+  mutate(Total = (Math + Reading + Science) / 3)
+
+# Rank countries per subject and total (1 = highest score)
+ranked_2018 <- country_averages_2018 %>%
+  mutate(
+    Math_Rank = dense_rank(desc(Math)),
+    Reading_Rank = dense_rank(desc(Reading)),
+    Science_Rank = dense_rank(desc(Science)),
+    Total_Rank = dense_rank(desc(Total))
+  )
+
+# Extract Greece's ranks
+greece_ranks_2018 <- ranked_2018 %>%
+  filter(CNT == "Greece") %>%
+  select(CNT, Math_Rank, Reading_Rank, Science_Rank, Total_Rank)
+
+print(greece_ranks_2018)
 
 
 
@@ -693,6 +778,54 @@ cat("✅ Plot 6 saved to: figures/ploy_6_score_change_greece_2018_2022.png\n")
 
 
 
+
+
+# # Load required libraries
+# library(ggplot2)
+# library(dplyr)
+
+# # Set up subject data: number of countries above threshold
+# subject_data <- data.frame(
+#   Subject = c("Math", "Reading", "Science"),
+#   Above = c(19, 22, 18)  # Example values: update as needed
+# )
+
+# # Total number of OECD countries
+# total_countries <- 38
+
+# # Add remaining countries to reach 38
+# subject_data <- subject_data %>%
+#   mutate(
+#     Remaining = total_countries - Above
+#   )
+
+# # Convert to long format for stacked bar plot
+# plot_data <- tidyr::pivot_longer(subject_data,
+#                                  cols = c("Above", "Remaining"),
+#                                  names_to = "Category",
+#                                  values_to = "Count")
+
+# # Plot
+# p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
+#   geom_bar(stat = "identity") +
+#   scale_fill_manual(
+#     values = c("Above" = "#00ced1", "Remaining" = "#ff7f50"),
+#     labels = c("Above threshold", "Remaining (to 38)"),
+#     name = "Group"
+#   ) +
+#   labs(
+#     title = "OECD Countries Above Threshold by Subject",
+#     x = "Subject",
+#     y = "Number of Countries"
+#   ) +
+#   theme_minimal(base_size = 14) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, face = "bold"),
+#     legend.position = "top"
+#   )
+
+# # Save the plot
+# ggsave("oecd_stacked_bar.png", plot = p, width = 8, height = 5, dpi = 300, bg = "white")
 
 
 
