@@ -718,121 +718,97 @@ cat("✅ Plot 7 saved to: figures/plot_7_all_gender_subject_score_change.png\n")
 
 # End Plot 7 : ================================================================
 
-# --- PLOT X:  ---
-# End Plot X : ================================================================
-
-# --- PLOT X:  ---
-# End Plot X : ================================================================
-
-# --- PLOT X:  ---
-# End Plot X : ================================================================
-
-
-
-
-# step 1 : change 2018 starting point 2022 per ender per gendea and total too 
-# for the most intresting ranign total and for spesific gender 
-# heatmap 2018? 
-
-
+# --- PLOT 8:  
+# --- Plot: Greece's Rank vs Global Average (PISA 2018) ---
 
 library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(fs)
 
-# Assuming data_2018 is already loaded and preprocessed with columns: CNT, MATH, READ, SCIE
-
-# Compute average scores per country
+# Step 1: Compute average scores per country
 country_averages_2018 <- data_2018 %>%
   group_by(CNT) %>%
   summarise(
     Math = mean(MATH, na.rm = TRUE),
     Reading = mean(READ, na.rm = TRUE),
     Science = mean(SCIE, na.rm = TRUE),
-    Total = rowMeans(cbind(Math, Reading, Science), na.rm = TRUE) # Will be overwritten below, better to compute separately
+    .groups = "drop"
   ) %>%
-  # Correct way to calculate Total as mean of the three columns per country
+  filter(!is.na(Math), !is.na(Reading), !is.na(Science)) %>%
   mutate(Total = (Math + Reading + Science) / 3)
 
-# Rank countries per subject and total (1 = highest score)
-ranked_2018 <- country_averages_2018 %>%
+# Step 2: Rank globally (lower is better)
+ranked <- country_averages_2018 %>%
   mutate(
-    Math_Rank = dense_rank(desc(Math)),
-    Reading_Rank = dense_rank(desc(Reading)),
-    Science_Rank = dense_rank(desc(Science)),
-    Total_Rank = dense_rank(desc(Total))
+    Math_Rank = min_rank(desc(Math)),
+    Reading_Rank = min_rank(desc(Reading)),
+    Science_Rank = min_rank(desc(Science)),
+    Total_Rank = min_rank(desc(Total))
   )
 
-# Extract Greece's ranks
-greece_ranks_2018 <- ranked_2018 %>%
+# Step 3: Extract Greece's rank per subject
+greece_ranks <- ranked %>%
   filter(CNT == "Greece") %>%
-  select(CNT, Math_Rank, Reading_Rank, Science_Rank, Total_Rank)
+  select(Math_Rank, Reading_Rank, Science_Rank, Total_Rank) %>%
+  pivot_longer(everything(), names_to = "Subject", values_to = "GreeceRank") %>%
+  mutate(
+    Subject = gsub("_Rank", "", Subject),
+    Subject = factor(Subject, levels = c("Math", "Reading", "Science", "Total"))
+  )
 
-print(greece_ranks_2018)
+# Step 4: Build stacked bar data
+total_countries <- nrow(ranked)
+average_rank <- round(mean(1:total_countries))
 
+plot_data <- greece_ranks %>%
+  mutate(Remaining = total_countries - GreeceRank) %>%
+  select(Subject, Greece = GreeceRank, `Countries Ranked Lower` = Remaining) %>%
+  pivot_longer(cols = c("Greece", "Countries Ranked Lower"),
+               names_to = "Category", values_to = "Count") %>%
+  mutate(Category = factor(Category, levels = c("Greece", "Countries Ranked Lower")))
 
+# Step 5: Plot
+p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = average_rank, linetype = "dashed", color = "red", linewidth = 0.8) +
+  annotate("text", x = 0.4, y = average_rank + 1.5,
+           label = paste0("Global Average Rank (", average_rank, ")"),
+           color = "red", size = 4, hjust = 0) +
+  scale_fill_manual(
+    values = c("Greece" = "#1E90FF", "Countries Ranked Lower" = "gray85"),
+    labels = c("Countries Ranked Higher Than Greece", "Countries Ranked Lower Than Greece"),
+    name = "Ranking Breakdown"
+  ) +
+  scale_y_continuous(
+    limits = c(0, total_countries),
+    breaks = seq(0, total_countries, 10)
+  ) +
+  labs(
+    title = "Greece's Global Rank by Subject (PISA 2018)",
+    subtitle = "Blue bar = Countries ranked higher than Greece; Red line = Global average rank",
+    x = "Subject",
+    y = "Number of Countries"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 12),
+    axis.title.y = element_text(margin = margin(r = 10)),
+    legend.position = "top"
+  )
 
+# Step 6: Save
+dir_create("figures")
+ggsave("figures/plot_8_greece_rank_vs_avg_annotated_2018.png", plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
+cat("✅ Plot 8 saved to: figures/plot_8_greece_rank_vs_avg_annotated_2018.png\n")
+# End Plot 8 : ================================================================
 
+# --- PLOT X:  ---
+# End Plot X : ================================================================
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # Load required libraries
-# library(ggplot2)
-# library(dplyr)
-
-# # Set up subject data: number of countries above threshold
-# subject_data <- data.frame(
-#   Subject = c("Math", "Reading", "Science"),
-#   Above = c(19, 22, 18)  # Example values: update as needed
-# )
-
-# # Total number of OECD countries
-# total_countries <- 38
-
-# # Add remaining countries to reach 38
-# subject_data <- subject_data %>%
-#   mutate(
-#     Remaining = total_countries - Above
-#   )
-
-# # Convert to long format for stacked bar plot
-# plot_data <- tidyr::pivot_longer(subject_data,
-#                                  cols = c("Above", "Remaining"),
-#                                  names_to = "Category",
-#                                  values_to = "Count")
-
-# # Plot
-# p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
-#   geom_bar(stat = "identity") +
-#   scale_fill_manual(
-#     values = c("Above" = "#00ced1", "Remaining" = "#ff7f50"),
-#     labels = c("Above threshold", "Remaining (to 38)"),
-#     name = "Group"
-#   ) +
-#   labs(
-#     title = "OECD Countries Above Threshold by Subject",
-#     x = "Subject",
-#     y = "Number of Countries"
-#   ) +
-#   theme_minimal(base_size = 14) +
-#   theme(
-#     plot.title = element_text(hjust = 0.5, face = "bold"),
-#     legend.position = "top"
-#   )
-
-# # Save the plot
-# ggsave("oecd_stacked_bar.png", plot = p, width = 8, height = 5, dpi = 300, bg = "white")
+# --- PLOT X:  ---
+# End Plot X : ================================================================
 
 
 
