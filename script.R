@@ -655,7 +655,11 @@ cat("✅ Plot 6 saved to: figures/ploy_6_score_change_greece_2018_2022.png\n")
 # End Plot 6: ================================================================
 
 # --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
-# Load required packages (install first if needed)
+# --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(fs)
 
 # Compute mean scores by gender and subject for each year
 get_mean_scores <- function(data, year_label) {
@@ -689,11 +693,13 @@ score_changes <- score_changes %>%
 # Create output folder
 dir_create("figures")
 
-# Plot
+# Plot with thick blue outline for Greece
 p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
-  geom_tile(aes(color = IsGreece), width = 1, height = 1, linewidth = 0.8) +
+  geom_tile(width = 1, height = 1, color = "grey90") +
+  geom_tile(data = filter(score_changes, IsGreece), 
+            aes(x = Combo, y = CNT), 
+            width = 1, height = 1, color = "blue", linewidth = 1.2, fill = NA) +
   scale_fill_gradient2(low = "firebrick", mid = "white", high = "darkgreen", midpoint = 0, name = "Score Change") +
-  scale_color_manual(values = c("TRUE" = "blue", "FALSE" = NA), guide = "none") +
   labs(title = "Score Change (2018–2022) by Country, Gender, and Subject", x = "Gender–Subject", y = NULL) +
   theme_minimal(base_size = 14) +
   theme(
@@ -709,6 +715,7 @@ p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
 # Save plot
 ggsave("figures/plot_7_all_gender_subject_score_change.png", plot = p, width = 11, height = 13, dpi = 300, bg = "white")
 cat("✅ Plot 7 saved to: figures/plot_7_all_gender_subject_score_change.png\n")
+
 # End Plot 7 : ================================================================
 
 # --- PLOT X:  ---
