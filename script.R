@@ -7,8 +7,7 @@ suppressPackageStartupMessages({
     library(grid)
     library(gridExtra)
     library(fs)
-    library(tidyverse)
-})
+    library(tidyverse)})
 
 ### Load and Explore Data for 2018 
 # Load 2018 
@@ -804,12 +803,151 @@ ggsave("figures/plot_8_greece_rank_vs_avg_annotated_2018.png", plot = p, width =
 cat("✅ Plot 8 saved to: figures/plot_8_greece_rank_vs_avg_annotated_2018.png\n")
 # End Plot 8 : ================================================================
 
-# --- PLOT X:  ---
-# End Plot X : ================================================================
+# --- PLOT 9:  ---
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(forcats)
+library(fs)
 
-# --- PLOT X:  ---
-# End Plot X : ================================================================
+# Step 1: Compute gender gaps per country and subject + GLCM
+gender_gap_df <- newdata %>%
+  filter(ST004D01T %in% c("Male", "Female")) %>%
+  pivot_longer(cols = c(MATH, READ, SCIE, GLCM), names_to = "Subject", values_to = "Score") %>%
+  group_by(CNT, Subject, ST004D01T) %>%
+  summarise(MeanScore = mean(Score, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = ST004D01T, values_from = MeanScore) %>%
+  mutate(GenderGap = Female - Male) %>%
+  drop_na(GenderGap)
 
+# Step 2: Format for heatmap
+heatmap_data <- gender_gap_df %>%
+  mutate(IsGreece = CNT == "Greece") %>%
+  select(CNT, Subject, GenderGap, IsGreece)
 
+# Step 3: Order countries by average gender gap
+country_order <- heatmap_data %>%
+  group_by(CNT) %>%
+  summarise(AvgGap = mean(GenderGap, na.rm = TRUE)) %>%
+  arrange(desc(AvgGap)) %>%
+  pull(CNT)
 
+heatmap_data <- heatmap_data %>%
+  mutate(
+    CNT = factor(CNT, levels = country_order),
+    Subject = factor(Subject, levels = c("MATH", "READ", "SCIE", "GLCM"))
+  )
 
+# Step 4: Plot
+p <- ggplot(heatmap_data, aes(x = Subject, y = CNT, fill = GenderGap)) +
+  geom_tile(color = ifelse(heatmap_data$IsGreece, "blue", NA), linewidth = 1.1) +
+  scale_fill_gradient2(low = "darkred", mid = "white", high = "darkgreen", midpoint = 0,
+                       name = "Gap (F − M)") +
+  labs(
+    title = "Gender Gap in PISA 2018 Scores by Country and Subject (incl. Global Competence)",
+    subtitle = "Positive = Girls outperform Boys | Greece outlined in blue",
+    x = "Subject", y = "Country"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.text.x = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+# Step 5: Save
+dir_create("figures")
+ggsave("figures/plot_9_gender_gap_heatmap_with_glcm.png", plot = p, width = 11, height = 12, dpi = 300, bg = "white")
+
+cat("✅ Heatmap with GLCM column saved to: figures/plot_9_gender_gap_heatmap_with_glcm.png\n")
+# End Plot 9: ================================================================
+
+# --- PLOT 10:  ---
+# Step 1: Define region map
+region_map <- c(
+  # Europe
+  "Greece" = "Europe", "France" = "Europe", "Germany" = "Europe", "Italy" = "Europe",
+  "Spain" = "Europe", "Poland" = "Europe", "Finland" = "Europe", "Estonia" = "Europe",
+  "United Kingdom" = "Europe", "Netherlands" = "Europe", "Sweden" = "Europe",
+  "Austria" = "Europe", "Belgium" = "Europe", "Portugal" = "Europe", "Hungary" = "Europe",
+  # Asia
+  "Japan" = "Asia", "Korea" = "Asia", "Singapore" = "Asia", "Vietnam" = "Asia",
+  "Macao" = "Asia", "Hong Kong" = "Asia", "Chinese Taipei" = "Asia", "Thailand" = "Asia",
+  "Malaysia" = "Asia", "Indonesia" = "Asia", "Kazakhstan" = "Asia",
+  # Americas
+  "Canada" = "Americas", "United States" = "Americas", "Mexico" = "Americas",
+  "Brazil" = "Americas", "Argentina" = "Americas", "Chile" = "Americas",
+  "Colombia" = "Americas", "Peru" = "Americas", "Uruguay" = "Americas",
+  # Middle East
+  "Israel" = "Middle East", "Qatar" = "Middle East", "Saudi Arabia" = "Middle East",
+  "Jordan" = "Middle East", "United Arab Emirates" = "Middle East",
+  # Africa
+  "Morocco" = "Africa", "Tunisia" = "Africa"
+)
+
+# Step 2: Add Region column
+data_region <- newdata %>%
+  mutate(Region = region_map[as.character(CNT)])
+
+# Step 3: Average subject scores by region
+region_scores <- data_region %>%
+  filter(!is.na(Region)) %>%
+  group_by(Region) %>%
+  summarise(
+    Math = mean(MATH, na.rm = TRUE),
+    Reading = mean(READ, na.rm = TRUE),
+    Science = mean(SCIE, na.rm = TRUE),
+    Total = (Math + Reading + Science) / 3,
+    .groups = "drop"
+  )
+
+# Step 4: Add Greece separately
+greece_scores <- newdata %>%
+  filter(CNT == "Greece") %>%
+  summarise(
+    Math = mean(MATH, na.rm = TRUE),
+    Reading = mean(READ, na.rm = TRUE),
+    Science = mean(SCIE, na.rm = TRUE)
+  ) %>%
+  mutate(
+    Total = (Math + Reading + Science) / 3,
+    Region = "Greece"
+  )
+
+# Step 5: Combine and pivot to long format
+plot_data <- bind_rows(region_scores, greece_scores) %>%
+  pivot_longer(cols = c(Math, Reading, Science, Total),
+               names_to = "Subject", values_to = "Score")
+
+# Step 6: Reorder region separately within each subject
+plot_data <- plot_data %>%
+  group_by(Subject) %>%
+  mutate(Region = fct_reorder(Region, Score)) %>%
+  ungroup()
+
+# Step 7: Plot
+p <- ggplot(plot_data, aes(x = Region, y = Score, fill = Region == "Greece")) +
+  geom_col() +
+  facet_wrap(~ Subject, scales = "free_x") +
+  scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray80"), guide = "none") +
+  labs(
+    title = "Average PISA 2018 Scores by Region and Greece",
+    subtitle = "Each subject sorted independently; Greece highlighted in blue",
+    x = NULL, y = "Average Score"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+# Step 8: Save
+dir_create("figures")
+ggsave("figures/plot_10_plot_regional_comparison_greece_sorted_facets.png", plot = p,
+       width = 12, height = 7, dpi = 300, bg = "white")
+
+cat("✅ Plot with facet-wise sorting saved to: figures/plot_10_plot_regional_comparison_greece_sorted_facets.png\n")
+# End Plot 10: ================================================================
