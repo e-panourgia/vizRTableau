@@ -20,7 +20,7 @@ if (!dir.exists("../figures")) {
 
 ### Load and Explore Data for 2018 
 # Load 2018 
-setwd("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/data/deployed_data")
+setwd("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/data/deployed_data")
 load("pisa2018.Rdata")
 # Explore 2018 
 # Check column names if data frame exists
@@ -232,8 +232,8 @@ p1 <- ggplot(plot_data, aes(x = Subject, y = Score, fill = Group)) +
   )
 
 # Step 9: Save
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_1_greece_vs_top_subjects_diff.png", plot = p1, width = 10, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 1 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_1_greece_vs_top_subjects_diff.png\n")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_1_greece_vs_top_subjects_diff.png", plot = p1, width = 10, height = 6, dpi = 300, bg = "white")
+cat("✅ Plot 1 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_1_greece_vs_top_subjects_diff.png\n")
 
 # End Plot 1 : ================================================================
 
@@ -332,8 +332,8 @@ p2 <- ggplot(long_df, aes(x = "", y = Score)) +
   )
 
 # Save final version
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_2_greece_filtered_glcm_boxplots.png", plot = p2, width = 12, height = 5, dpi = 300, bg = "white")
-cat("✅ Plot 2 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_2_greece_filtered_glcm_boxplots.png\n")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_2_greece_filtered_glcm_boxplots.png", plot = p2, width = 12, height = 5, dpi = 300, bg = "white")
+cat("✅ Plot 2 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_2_greece_filtered_glcm_boxplots.png\n")
 # End Plot 2 : ================================================================
 
 
@@ -406,8 +406,8 @@ p3 <- ggplot(plot_data, aes(x = reorder(Country, -GLCM_Mean), y = GLCM_Mean, fil
   )
 
 # Step 7: Save the plot
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_3_glcm_plot.png", plot = p3, width = 10, height = 6, dpi = 320, bg = "white")
-cat("✅ Plot 3 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_3_glcm_plot.png\n")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_3_glcm_plot.png", plot = p3, width = 10, height = 6, dpi = 320, bg = "white")
+cat("✅ Plot 3 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_3_glcm_plot.png\n")
 
 
 
@@ -513,9 +513,9 @@ p_gendered <- ggplot(plot_data, aes(x = Subject, y = Score, fill = BarGroup)) +
   )
 
 # Step 8: Save
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_4_gendered_subject_scores_pink_blue_grouped_gender.png",
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_4_gendered_subject_scores_pink_blue_grouped_gender.png",
        plot = p_gendered, width = 10, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 4 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_4_gendered_subject_scores_pink_blue_grouped_gender.png\n")
+cat("✅ Plot 4 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_4_gendered_subject_scores_pink_blue_grouped_gender.png\n")
 
 # End Plot 4 : ================================================================
 
@@ -601,8 +601,8 @@ g <- arrangeGrob(
   ncol = 2,
   top = textGrob("Greece's Global Competence vs Academic Scores by Gender", gp = gpar(fontsize = 15, fontface = "bold"))
 )
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_5_glcm_vs_academic_gender_greece_dist_legend.png", g, width = 13, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 5 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_5_glcm_vs_academic_gender_greece_dist_legend.png\n")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_5_glcm_vs_academic_gender_greece_dist_legend.png", g, width = 13, height = 6, dpi = 300, bg = "white")
+cat("✅ Plot 5 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_5_glcm_vs_academic_gender_greece_dist_legend.png\n")
 # End Plot 5 : ================================================================
 
 ### Combine Data 2018 with 2022 for comaprson with the latest data
@@ -657,9 +657,9 @@ p_greece_change <- ggplot(score_change, aes(x = Subject, y = Change, fill = Gend
   )
 
 # Save to figures
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_6_score_change_greece_2018_2022.png", plot = p_greece_change,
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_6_score_change_greece_2018_2022.png", plot = p_greece_change,
        width = 10, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 6 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_6_score_change_greece_2018_2022.png\n")
+cat("✅ Plot 6 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_6_score_change_greece_2018_2022.png\n")
 # End Plot 6: ================================================================
 
 # --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
@@ -721,8 +721,8 @@ p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
   )
 
 # Save plot
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_7_all_gender_subject_score_change.png", plot = p, width = 11, height = 13, dpi = 300, bg = "white")
-cat("✅ Plot 7 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_7_all_gender_subject_score_change.png\n")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_7_all_gender_subject_score_change.png", plot = p, width = 11, height = 13, dpi = 300, bg = "white")
+cat("✅ Plot 7 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_7_all_gender_subject_score_change.png\n")
 
 # End Plot 7 : ================================================================
 
@@ -808,8 +808,8 @@ p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
 
 # Step 6: Save
 dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_8_greece_rank_vs_avg_annotated_2018.png", plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
-cat("✅ Plot 8 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_8_greece_rank_vs_avg_annotated_2018.png\n")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_8_greece_rank_vs_avg_annotated_2018.png", plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
+cat("✅ Plot 8 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_8_greece_rank_vs_avg_annotated_2018.png\n")
 # End Plot 8 : ================================================================
 
 # --- PLOT 9:  ---
@@ -867,9 +867,9 @@ p <- ggplot(heatmap_data, aes(x = Subject, y = CNT, fill = GenderGap)) +
 
 # Step 5: Save
 dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_9_gender_gap_heatmap_with_glcm.png", plot = p, width = 11, height = 12, dpi = 300, bg = "white")
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_9_gender_gap_heatmap_with_glcm.png", plot = p, width = 11, height = 12, dpi = 300, bg = "white")
 
-cat("✅ Plot 9 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_9_gender_gap_heatmap_with_glcm.png\n")
+cat("✅ Plot 9 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_9_gender_gap_heatmap_with_glcm.png\n")
 # End Plot 9: ================================================================
 
 # --- PLOT 10:  ---
@@ -955,10 +955,10 @@ p <- ggplot(plot_data, aes(x = Region, y = Score, fill = Region == "Greece")) +
 
 # Step 8: Save
 dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_10_plot_regional_comparison_greece_sorted_facets.png", plot = p,
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_10_plot_regional_comparison_greece_sorted_facets.png", plot = p,
        width = 12, height = 7, dpi = 300, bg = "white")
 
-cat("✅ Plot 10 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_10_plot_regional_comparison_greece_sorted_facets.png\n")
+cat("✅ Plot 10 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_10_plot_regional_comparison_greece_sorted_facets.png\n")
 # End Plot 10: ================================================================
 
 
@@ -1034,7 +1034,7 @@ p11 <- ggplot(plot_data_11, aes(area = ScoreArea, fill = Region == "Greece", lab
 
 # Save plot
 dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_11_treemap_scaled_with_borders.png", plot = p11,
+ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_11_treemap_scaled_with_borders.png", plot = p11,
        width = 10, height = 7, dpi = 300, bg = "white")
 
-cat("✅ Plot 11 saved to: /Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/figures/plot_11_treemap_scaled_with_borders.png\n")
+cat("✅ Plot 11 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_11_treemap_scaled_with_borders.png\n")
