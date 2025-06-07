@@ -1,4 +1,7 @@
 # intall packages # Load required libraries
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("treemapify")
+
 suppressPackageStartupMessages({
     library(dplyr)
     library(ggplot2)
@@ -7,7 +10,9 @@ suppressPackageStartupMessages({
     library(grid)
     library(gridExtra)
     library(fs)
-    library(tidyverse)})
+    library(tidyverse)
+    library(treemapify)
+})
 
 ### Load and Explore Data for 2018 
 # Load 2018 
@@ -860,7 +865,7 @@ p <- ggplot(heatmap_data, aes(x = Subject, y = CNT, fill = GenderGap)) +
 dir_create("figures")
 ggsave("figures/plot_9_gender_gap_heatmap_with_glcm.png", plot = p, width = 11, height = 12, dpi = 300, bg = "white")
 
-cat("✅ Heatmap with GLCM column saved to: figures/plot_9_gender_gap_heatmap_with_glcm.png\n")
+cat("✅ Plot 9 saved to: figures/plot_9_gender_gap_heatmap_with_glcm.png\n")
 # End Plot 9: ================================================================
 
 # --- PLOT 10:  ---
@@ -949,5 +954,83 @@ dir_create("figures")
 ggsave("figures/plot_10_plot_regional_comparison_greece_sorted_facets.png", plot = p,
        width = 12, height = 7, dpi = 300, bg = "white")
 
-cat("✅ Plot with facet-wise sorting saved to: figures/plot_10_plot_regional_comparison_greece_sorted_facets.png\n")
+cat("✅ Plot 10 saved to: figures/plot_10_plot_regional_comparison_greece_sorted_facets.png\n")
 # End Plot 10: ================================================================
+
+
+
+
+# --- PLOT 11: Treemap of Total PISA Scores by Region (Scaled + Outlined) ---
+
+# Set CRAN mirror and load/install required packages
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+if (!require("treemapify")) install.packages("treemapify")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("fs")) install.packages("fs")
+library(treemapify)
+library(dplyr)
+library(ggplot2)
+library(fs)
+
+# Define region mapping
+region_map <- c(
+  "Greece" = "Europe", "France" = "Europe", "Germany" = "Europe", "Italy" = "Europe",
+  "Spain" = "Europe", "Poland" = "Europe", "Finland" = "Europe", "Estonia" = "Europe",
+  "United Kingdom" = "Europe", "Netherlands" = "Europe", "Sweden" = "Europe",
+  "Austria" = "Europe", "Belgium" = "Europe", "Portugal" = "Europe", "Hungary" = "Europe",
+  "Japan" = "Asia", "Korea" = "Asia", "Singapore" = "Asia", "Vietnam" = "Asia",
+  "Macao" = "Asia", "Hong Kong" = "Asia", "Chinese Taipei" = "Asia", "Thailand" = "Asia",
+  "Malaysia" = "Asia", "Indonesia" = "Asia", "Kazakhstan" = "Asia",
+  "Canada" = "Americas", "United States" = "Americas", "Mexico" = "Americas",
+  "Brazil" = "Americas", "Argentina" = "Americas", "Chile" = "Americas",
+  "Colombia" = "Americas", "Peru" = "Americas", "Uruguay" = "Americas",
+  "Israel" = "Middle East", "Qatar" = "Middle East", "Saudi Arabia" = "Middle East",
+  "Jordan" = "Middle East", "United Arab Emirates" = "Middle East",
+  "Morocco" = "Africa", "Tunisia" = "Africa"
+)
+
+# Apply region mapping to dataset (assumes 'newdata' is preloaded with MATH, READ, SCIE, CNT)
+data_region <- newdata %>%
+  mutate(Region = region_map[as.character(CNT)])
+
+# Average total score per region (excluding Greece)
+region_scores <- data_region %>%
+  filter(!is.na(Region)) %>%
+  group_by(Region) %>%
+  summarise(Total = mean(c(MATH, READ, SCIE), na.rm = TRUE), .groups = "drop")
+
+# Compute Greece separately
+greece_score <- newdata %>%
+  filter(CNT == "Greece") %>%
+  summarise(Total = mean(c(MATH, READ, SCIE), na.rm = TRUE)) %>%
+  mutate(Region = "Greece")
+
+# Combine all
+plot_data_11 <- bind_rows(region_scores, greece_score)
+
+# Amplify score differences for visual impact
+plot_data_11 <- plot_data_11 %>%
+  mutate(ScoreArea = (Total - min(Total))^2)
+
+# Create treemap with visible rectangle borders
+p11 <- ggplot(plot_data_11, aes(area = ScoreArea, fill = Region == "Greece", label = Region)) +
+  geom_treemap(color = "white", size = 1) +  # white borders between tiles
+  geom_treemap_text(color = "black", place = "centre", grow = TRUE, reflow = TRUE) +
+  scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray80"), guide = "none") +
+  labs(
+    title = "Treemap of Total PISA 2018 Scores by Region",
+    subtitle = "Box size ∝ (Score − Min)² — visual exaggeration; Greece in blue"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+# Save plot
+dir_create("figures")
+ggsave("figures/plot_11_treemap_scaled_with_borders.png", plot = p11,
+       width = 10, height = 7, dpi = 300, bg = "white")
+
+cat("✅ Plot 11 saved to: figures/plot_11_treemap_scaled_with_borders.png\n")
