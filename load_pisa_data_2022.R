@@ -147,7 +147,7 @@ cat("\nMissing values AFTER imputation (Gender + Subjects):\n")
 print(colSums(is.na(pisa2022_imputed[, c("ST004D01T", "MATH", "READ", "SCIE")])))
 
 # ---- Save Cleaned and Harmonized Data ----
-output_dir <- "/Users/evangeliapanourgia/Desktop/pisa/pisa_competition_2018"
+output_dir <- "/Users/evangeliapanourgia/Desktop/karlis-final/pisa_competition_2018"
 dir_create(output_dir)
 save(pisa2022_imputed, file = file.path(output_dir, "pisa2022.RData"))
 cat("\n✅ Cleaned, renamed, and harmonized dataset saved to:", file.path(output_dir, "pisa2022.RData"), "\n")

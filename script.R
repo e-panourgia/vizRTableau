@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
 
 ### Load and Explore Data for 2018 
 # Load 2018 
-setwd("/Users/evangeliapanourgia/Desktop/pisa/pisa_competition_2018")
+setwd("/Users/evangeliapanourgia/Desktop/karlis-final/pisa_competition_2018")
 load("pisa2018.Rdata")
 # Explore 2018 
 # Check column names if data frame exists
