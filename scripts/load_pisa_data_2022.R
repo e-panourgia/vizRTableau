@@ -12,7 +12,7 @@ library(dplyr)
 library(fs)
 
 # ---- File Path and Columns to Load ----
-sas_file_path <- "/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/data/raw/STU_QQQ_SAS/CY08MSP_STU_QQQ.SAS7BDAT"
+sas_file_path <- "/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/data/raw/STU_QQQ_SAS/CY08MSP_STU_QQQ.SAS7BDAT"
 
 columns_needed <- c(
   "CNT",         # Country (ISO3 code)
@@ -147,7 +147,7 @@ cat("\nMissing values AFTER imputation (Gender + Subjects):\n")
 print(colSums(is.na(pisa2022_imputed[, c("ST004D01T", "MATH", "READ", "SCIE")])))
 
 # ---- Save Cleaned and Harmonized Data ----
-output_dir <- "/Users/evangeliapanourgia/Desktop/karlis-final/vizRTableau/pisa/data/deployed_data"
+output_dir <- "/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/data/deployed_data"
 dir_create(output_dir)
 save(pisa2022_imputed, file = file.path(output_dir, "pisa2022.RData"))
 cat("\n✅ Cleaned, renamed, and harmonized dataset saved to:", file.path(output_dir, "pisa2022.RData"), "\n")
