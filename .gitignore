@@ -175,3 +175,5 @@ cython_debug/
 
 # R plots
 Rplots.pdf
+
+vizRTableau/pisa/data/raw/STU_QQQ_SAS/
