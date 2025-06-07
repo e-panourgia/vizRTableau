@@ -1,5 +1,6 @@
 ## Pisa competition 2018
 
+### Structure of the project
 ```bash
 .
 ├── data
@@ -32,6 +33,19 @@
 └── tableau
 ```
 
-## Acknowledgments
+### Deploy
+- [Optional]: To load and preprocess the PISA 2022 dataset, run:
+```r
+scripts/load_pisa_data_2022.R
+```
+Processed data saved to: `vizRTableau/data/deployed_data/pisa2022.RData`
+- [Main]:  To generate and export the plots, execute:
+```r
+vizRTableau/scripts/script.R
+```
+Figures saved to:  `vizRTableau/data/deployed_data/figures`
+
+
+### Acknowledgments
 - [PISA 2018 Database – OECD](https://www.oecd.org/pisa/data/2018database/)
 - [PISA 2022 Database – OECD](https://www.oecd.org/pisa/data/2022database/)
