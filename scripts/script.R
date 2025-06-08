@@ -510,7 +510,7 @@ p_gendered <- ggplot(plot_data, aes(x = Subject, y = Score, fill = BarGroup)) +
     )
   ) +
   labs(
-    title = "PISA 2018: Subject Scores by Gender and Country Group",
+    title = "Student Performance by Gender and Country Group (PISA 2018)",
     x = NULL,
     y = "Mean Score"
   ) +
@@ -738,7 +738,6 @@ cat("✅ Plot 7 saved to: ", file.path(figures_dir, "plot_7_all_gender_subject_s
 
 # --- PLOT 8:  
 # --- Plot: Greece's Rank vs Global Average (PISA 2018) ---
-
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -772,7 +771,8 @@ greece_ranks <- ranked %>%
   pivot_longer(everything(), names_to = "Subject", values_to = "GreeceRank") %>%
   mutate(
     Subject = gsub("_Rank", "", Subject),
-    Subject = factor(Subject, levels = c("Math", "Reading", "Science", "Total"))
+    Subject = recode(Subject, Total = "Overall"),  # Optional: rename "Total" to "Overall"
+    Subject = factor(Subject, levels = c("Math", "Reading", "Science", "Overall"))
   )
 
 # Step 4: Build stacked bar data
@@ -780,22 +780,25 @@ total_countries <- nrow(ranked)
 average_rank <- round(mean(1:total_countries))
 
 plot_data <- greece_ranks %>%
-  mutate(Remaining = total_countries - GreeceRank) %>%
-  select(Subject, Greece = GreeceRank, `Countries Ranked Lower` = Remaining) %>%
-  pivot_longer(cols = c("Greece", "Countries Ranked Lower"),
+  mutate(
+    `Countries Ranked Higher` = GreeceRank - 1,
+    `Countries Ranked Lower` = total_countries - GreeceRank
+  ) %>%
+  select(Subject, `Countries Ranked Higher`, `Countries Ranked Lower`) %>%
+  pivot_longer(cols = starts_with("Countries"),
                names_to = "Category", values_to = "Count") %>%
-  mutate(Category = factor(Category, levels = c("Greece", "Countries Ranked Lower")))
+  mutate(Category = factor(Category, levels = c("Countries Ranked Higher", "Countries Ranked Lower")))
 
 # Step 5: Plot
 p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
   geom_bar(stat = "identity") +
   geom_hline(yintercept = average_rank, linetype = "dashed", color = "red", linewidth = 0.8) +
-  annotate("text", x = 0.4, y = average_rank + 1.5,
-           label = paste0("Global Average Rank (", average_rank, ")"),
-           color = "red", size = 4, hjust = 0) +
+  annotate("text", x = Inf, y = average_rank + 1.5,
+           label = "Global Average Rank",
+           color = "red", size = 5, hjust = 1, fontface = "bold") +
   scale_fill_manual(
-    values = c("Greece" = "#1E90FF", "Countries Ranked Lower" = "gray85"),
-    labels = c("Countries Ranked Higher Than Greece", "Countries Ranked Lower Than Greece"),
+    values = c("Countries Ranked Higher" = "#1E90FF", "Countries Ranked Lower" = "gray85"),
+    labels = c("Countries Ranked Worse", "Countries Ranked Better"),
     name = "Ranking Breakdown"
   ) +
   scale_y_continuous(
@@ -803,23 +806,26 @@ p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
     breaks = seq(0, total_countries, 10)
   ) +
   labs(
-    title = "Greece's Global Rank by Subject (PISA 2018)",
-    subtitle = "Blue bar = Countries ranked higher than Greece; Red line = Global average rank",
+    title = "Greece's Global Rank by Subject and Overall (PISA 2018)",
     x = "Subject",
     y = "Number of Countries"
   ) +
   theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
-    plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 12),
     axis.title.y = element_text(margin = margin(r = 10)),
-    legend.position = "top"
+    legend.position = "top",
+    axis.text.y = element_text(face = "bold", color = "#0072B2", size = 14)
   )
 
 # Step 6: Save
-dir_create("figures")
-ggsave(file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"), plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
-cat("✅ Plot 8 saved to: ", file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"), "\n")
+figures_dir <- file.path(project_dir, "figures")
+if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
+ggsave(file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"),
+       plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
+cat("✅ Plot 8 saved to:", file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"), "\n")
+
+
 # End Plot 8 : ================================================================
 
 # --- PLOT 9:  ---
@@ -959,7 +965,7 @@ p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
   scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray70"),
                     labels = c("Non-OECD", "OECD"), name = "Membership") +
   labs(
-    title = "<b>Number of PISA 2018 Countries per Continent by OECD Membership (PISA 2018)</b>",
+    title = "<b>Number of Countries per Continent by OECD Membership (PISA 2018)</b>",
     subtitle = "Greece (Europe, OECD) and China (Asia, Non-OECD)",
     x = "Continent", y = "Number of Countries"
   ) +
