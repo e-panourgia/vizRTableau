@@ -882,54 +882,78 @@ ggsave(file.path(figures_dir, "plot_9_gender_gap_heatmap_with_glcm.png"), plot =
 cat("✅ Plot 9 saved to: ", file.path(figures_dir, "plot_9_gender_gap_heatmap_with_glcm.png"), "\n")
 # End Plot 9: ================================================================
 
-# --- PLOT 10:  ---
-# Step 1: OECD membership
-oecd_members <- c(
-  "Albania" = FALSE, "Argentina" = FALSE, "Australia" = TRUE, "Austria" = TRUE,
-  "Belgium" = TRUE, "Brazil" = FALSE, "Bulgaria" = FALSE, "Canada" = TRUE,
-  "Chile" = TRUE, "Colombia" = TRUE, "Costa Rica" = TRUE, "Croatia" = FALSE,
-  "Czech Republic" = TRUE, "Denmark" = TRUE, "Estonia" = TRUE, "Finland" = TRUE,
-  "France" = TRUE, "Georgia" = FALSE, "Germany" = TRUE, "Greece" = TRUE,
-  "Hong Kong" = FALSE, "Hungary" = TRUE, "Iceland" = TRUE, "India" = FALSE,
-  "Indonesia" = FALSE, "Ireland" = TRUE, "Israel" = TRUE, "Italy" = TRUE,
-  "Japan" = TRUE, "Jordan" = FALSE, "Kazakhstan" = FALSE, "Korea" = TRUE,
-  "Latvia" = TRUE, "Lithuania" = TRUE, "Luxembourg" = TRUE, "Malaysia" = FALSE,
-  "Mexico" = TRUE, "Moldova" = FALSE, "Montenegro" = FALSE, "Morocco" = FALSE,
-  "Netherlands" = TRUE, "New Zealand" = TRUE, "North Macedonia" = FALSE,
-  "Norway" = TRUE, "Peru" = FALSE, "Philippines" = FALSE, "Poland" = TRUE,
-  "Portugal" = TRUE, "Qatar" = FALSE, "Romania" = FALSE, "Russian Federation" = FALSE,
-  "Saudi Arabia" = FALSE, "Serbia" = FALSE, "Singapore" = FALSE, "Slovak Republic" = TRUE,
-  "Slovenia" = TRUE, "Spain" = TRUE, "Sweden" = TRUE, "Switzerland" = TRUE,
-  "Thailand" = FALSE, "Tunisia" = FALSE, "Turkey" = TRUE, "Ukraine" = FALSE,
-  "United Arab Emirates" = FALSE, "United Kingdom" = TRUE, "United States" = TRUE,
-  "Uruguay" = FALSE, "Vietnam" = FALSE, "Chinese Taipei" = FALSE,
-  "B-S-J-Z (China)" = FALSE
+
+
+
+ # --- Final Plot: Greece Arrow Points Down, Moved 2 Units Lower ---
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggtext")) install.packages("ggtext")
+if (!require("dplyr")) install.packages("dplyr")
+library(ggplot2)
+library(ggtext)
+library(dplyr)
+
+# OECD countries
+oecd_membership <- c(
+  "Australia", "Austria", "Belgium", "Canada", "Chile", "Colombia", "Czech Republic", "Denmark",
+  "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel",
+  "Italy", "Japan", "Korea", "Latvia", "Lithuania", "Luxembourg", "Mexico", "Netherlands", "New Zealand",
+  "Norway", "Poland", "Portugal", "Slovak Republic", "Slovenia", "Spain", "Sweden", "Switzerland",
+  "Turkey", "United Kingdom", "United States"
 )
-# Step 2: Continent mapping
+
+# Continent map
 continent_map <- list(
-  "Europe" = c("Austria", "Belgium", "France", "Germany", "Greece", "Italy", "Netherlands", "Spain", "Sweden", "Switzerland", "United Kingdom", "Poland", "Czech Republic", "Portugal", "Slovak Republic", "Hungary", "Finland", "Ireland", "Denmark", "Estonia", "Latvia", "Lithuania", "Slovenia", "Norway", "Iceland", "Luxembourg"),
-  "Asia" = c("Japan", "Korea", "Singapore", "Hong Kong", "Chinese Taipei", "Malaysia", "Thailand", "Vietnam", "B-S-J-Z (China)", "Indonesia", "Kazakhstan", "Qatar", "Saudi Arabia", "Jordan", "United Arab Emirates", "Israel"),
-  "Americas" = c("United States", "Canada", "Mexico", "Chile", "Colombia", "Costa Rica", "Argentina", "Brazil", "Uruguay", "Peru"),
-  "Africa" = c("Morocco", "Tunisia"),
+  "Europe" = c("Albania", "Austria", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Czech Republic", 
+               "Denmark", "Estonia", "Finland", "France", "Georgia", "Germany", "Greece", "Hungary", "Iceland", 
+               "Ireland", "Italy", "Kosovo", "Latvia", "Lithuania", "Luxembourg", "Malta", "Moldova", "Montenegro", 
+               "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Serbia", 
+               "Slovak Republic", "Slovenia", "Spain", "Sweden", "Switzerland", "Turkey", "Ukraine", 
+               "United Kingdom", "Belarus", "Russian Federation"),
+  "Asia" = c("B-S-J-Z (China)", "Brunei Darussalam", "Chinese Taipei", "Hong Kong", "Indonesia", "Israel", 
+             "Japan", "Jordan", "Kazakhstan", "Korea", "Lebanon", "Macao", "Malaysia", "Philippines", 
+             "Qatar", "Saudi Arabia", "Singapore", "Thailand", "United Arab Emirates", "Vietnam"),
+  "Americas" = c("Argentina", "Brazil", "Canada", "Chile", "Colombia", "Costa Rica", "Dominican Republic", 
+                 "Mexico", "Panama", "Peru", "United States", "Uruguay"),
+  "Africa" = c("Morocco"),
   "Oceania" = c("Australia", "New Zealand")
 )
-# Step 3: Build dataset
-continent_lookup <- unlist(lapply(names(continent_map), function(continent) {
-  setNames(rep(continent, length(continent_map[[continent]])), continent_map[[continent]])
+
+# Flatten continent map
+continent_lookup <- unlist(lapply(names(continent_map), function(c) {
+  setNames(rep(c, length(continent_map[[c]])), continent_map[[c]])
 }))
-all_countries <- names(oecd_members)
-plot_df <- data.frame(
-  Country = all_countries,
-  OECD = unname(unlist(oecd_members)),
-  Continent = continent_lookup[all_countries]
+
+# Excluded entities
+excluded <- c("Baku (Azerbaijan)", "Moscow Region (RUS)", "Tatarstan (RUS)")
+
+# Clean data
+country_vec <- unique(trimws(as.character(data_2018$CNT)))
+country_vec <- setdiff(country_vec, excluded)
+continent_vals <- continent_lookup[country_vec]
+
+country_df <- data.frame(
+  Country = country_vec,
+  OECD = country_vec %in% oecd_membership,
+  Continent = continent_vals,
+  stringsAsFactors = FALSE
 )
-plot_df <- plot_df[!is.na(plot_df$Continent), ]
-plot_df$Count <- 1
-summary_df <- aggregate(Count ~ Continent + OECD, data = plot_df, FUN = sum)
-# Heights for arrows
-europe_total <- sum(summary_df$Count[summary_df$Continent == "Europe"])
-asia_non_oecd <- summary_df$Count[summary_df$Continent == "Asia" & summary_df$OECD == FALSE]
-# Step 4: Final Plot (complete chain!)
+country_df <- country_df[!is.na(country_df$Continent), ]
+
+# Summary
+summary_df <- country_df %>%
+  group_by(Continent, OECD) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Continent) %>%
+  arrange(OECD) %>%
+  mutate(ypos = cumsum(Count) - Count / 2) %>%
+  ungroup()
+
+# Arrow y-positions
+greece_y <- summary_df$ypos[summary_df$Continent == "Europe" & summary_df$OECD == TRUE]
+china_y  <- summary_df$ypos[summary_df$Continent == "Asia" & summary_df$OECD == FALSE]
+
+# Plot
 p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
   geom_bar(stat = "identity", position = "stack", color = "black") +
   scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray70"),
@@ -937,14 +961,15 @@ p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
   labs(
     title = "<b>Number of PISA 2018 Countries per Continent by OECD Membership (PISA 2018)</b>",
     subtitle = "Greece (Europe, OECD) and China (Asia, Non-OECD)",
-    x = "Continent",
-    y = "Number of Countries"
+    x = "Continent", y = "Number of Countries"
   ) +
-  annotate("text", x = 4.5, y = europe_total + 2, label = "Greece", color = "red", size = 5, hjust = 0) +
-  annotate("segment", x = 4.4, xend = 4, y = europe_total + 1.5, yend = europe_total - 1,
+  # ✅ Greece: arrow pointing DOWN, moved lower
+  annotate("text", x = 4.5, y = greece_y + 0.5, label = "Greece", color = "red", size = 5, hjust = 0) +
+  annotate("segment", x = 4.4, xend = 4.1, y = greece_y + 0.3, yend = greece_y - 1.9,
            arrow = arrow(length = unit(0.25, "cm")), color = "red", linewidth = 1) +
-  annotate("text", x = 2.5, y = asia_non_oecd + 2, label = "China", color = "red", size = 5, hjust = 1) +
-  annotate("segment", x = 2.6, xend = 3, y = asia_non_oecd + 1.5, yend = asia_non_oecd - 0.5,
+  # China: unchanged
+  annotate("text", x = 2.5, y = china_y + 1.5, label = "China", color = "red", size = 5, hjust = 1) +
+  annotate("segment", x = 2.6, xend = 3, y = china_y + 1, yend = china_y,
            arrow = arrow(length = unit(0.25, "cm")), color = "red", linewidth = 1) +
   theme_minimal(base_size = 14) +
   theme(
@@ -952,15 +977,13 @@ p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
     axis.title.x = element_text(face = "bold"),
     axis.title.y = element_text(face = "bold")
   )
-# Show and save
-print(p)
-ggsave(
-  filename = file.path(figures_dir, "10_plot_oecd_continent_greece_china_arrow.png"),
-  plot = p,
-  width = 10,
-  height = 7,
-  dpi = 300,
-  bg = "white"
-)
-cat("✅ Plot 10 saved to: ", file.path(figures_dir, "10_plot_oecd_continent_greece_china_arrow.png"), "\n")
+
+# Save
+figures_dir <- file.path(project_dir, "figures")
+if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
+ggsave(file.path(figures_dir, "plot_10_oecd_by_continent_from_data_2018.png"),
+       plot = p, width = 10, height = 7, dpi = 300, bg = "white")
+cat("✅ Plot 10 saved to:", file.path(figures_dir, "plot_10_oecd_by_continent_from_data_2018.png"), "\n")
 # End Plot 10: ================================================================
+
+
