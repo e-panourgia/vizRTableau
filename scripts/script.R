@@ -17,12 +17,20 @@ suppressPackageStartupMessages({
     library(ggtext)
 })
 
+# ===================== DYNAMIC PATHS =====================
+# Set base directory for project (edit as needed)
+project_dir <- "/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau"
+data_dir <- file.path(project_dir, "data/deployed_data")
+figures_dir <- file.path(project_dir, "figures")
+
 # Create figures folder if it doesn't exist
-if (!dir.exists("../figures")) dir.create("../figures")
+if (!dir.exists(figures_dir)) dir.create(figures_dir)
+
+# Set working directory for data
+setwd(data_dir)
 
 ### Load and Explore Data for 2018 
 # Load 2018 
-setwd("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/data/deployed_data")
 load("pisa2018.Rdata")
 # Explore 2018 
 # Check column names if data frame exists
@@ -234,8 +242,8 @@ p1 <- ggplot(plot_data, aes(x = Subject, y = Score, fill = Group)) +
   )
 
 # Step 9: Save
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_1_greece_vs_top_subjects_diff.png", plot = p1, width = 10, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 1 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_1_greece_vs_top_subjects_diff.png\n")
+ggsave(file.path(figures_dir, "plot_1_greece_vs_top_subjects_diff.png"), plot = p1, width = 10, height = 6, dpi = 300, bg = "white")
+cat("✅ Plot 1 saved to: ", file.path(figures_dir, "plot_1_greece_vs_top_subjects_diff.png"), "\n")
 
 # End Plot 1 : ================================================================
 
@@ -334,8 +342,8 @@ p2 <- ggplot(long_df, aes(x = "", y = Score)) +
   )
 
 # Save final version
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_2_greece_filtered_glcm_boxplots.png", plot = p2, width = 12, height = 5, dpi = 300, bg = "white")
-cat("✅ Plot 2 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_2_greece_filtered_glcm_boxplots.png\n")
+ggsave(file.path(figures_dir, "plot_2_greece_filtered_glcm_boxplots.png"), plot = p2, width = 12, height = 5, dpi = 300, bg = "white")
+cat("✅ Plot 2 saved to: ", file.path(figures_dir, "plot_2_greece_filtered_glcm_boxplots.png"), "\n")
 # End Plot 2 : ================================================================
 
 
@@ -408,8 +416,8 @@ p3 <- ggplot(plot_data, aes(x = reorder(Country, -GLCM_Mean), y = GLCM_Mean, fil
   )
 
 # Step 7: Save the plot
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_3_glcm_plot.png", plot = p3, width = 10, height = 6, dpi = 320, bg = "white")
-cat("✅ Plot 3 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_3_glcm_plot.png\n")
+ggsave(file.path(figures_dir, "plot_3_glcm_plot.png"), plot = p3, width = 10, height = 6, dpi = 320, bg = "white")
+cat("✅ Plot 3 saved to: ", file.path(figures_dir, "plot_3_glcm_plot.png"), "\n")
 
 
 
@@ -515,9 +523,9 @@ p_gendered <- ggplot(plot_data, aes(x = Subject, y = Score, fill = BarGroup)) +
   )
 
 # Step 8: Save
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_4_gendered_subject_scores_pink_blue_grouped_gender.png",
+ggsave(file.path(figures_dir, "plot_4_gendered_subject_scores_pink_blue_grouped_gender.png"),
        plot = p_gendered, width = 10, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 4 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_4_gendered_subject_scores_pink_blue_grouped_gender.png\n")
+cat("✅ Plot 4 saved to: ", file.path(figures_dir, "plot_4_gendered_subject_scores_pink_blue_grouped_gender.png"), "\n")
 
 # End Plot 4 : ================================================================
 
@@ -603,8 +611,8 @@ g <- arrangeGrob(
   ncol = 2,
   top = textGrob("Greece's Global Competence vs Academic Scores by Gender", gp = gpar(fontsize = 15, fontface = "bold"))
 )
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_5_glcm_vs_academic_gender_greece_dist_legend.png", g, width = 13, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 5 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_5_glcm_vs_academic_gender_greece_dist_legend.png\n")
+ggsave(file.path(figures_dir, "plot_5_glcm_vs_academic_gender_greece_dist_legend.png"), g, width = 13, height = 6, dpi = 300, bg = "white")
+cat("✅ Plot 5 saved to: ", file.path(figures_dir, "plot_5_glcm_vs_academic_gender_greece_dist_legend.png"), "\n")
 # End Plot 5 : ================================================================
 
 ### Combine Data 2018 with 2022 for comaprson with the latest data
@@ -659,9 +667,9 @@ p_greece_change <- ggplot(score_change, aes(x = Subject, y = Change, fill = Gend
   )
 
 # Save to figures
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_6_score_change_greece_2018_2022.png", plot = p_greece_change,
+ggsave(file.path(figures_dir, "plot_6_score_change_greece_2018_2022.png"), plot = p_greece_change,
        width = 10, height = 6, dpi = 300, bg = "white")
-cat("✅ Plot 6 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_6_score_change_greece_2018_2022.png\n")
+cat("✅ Plot 6 saved to: ", file.path(figures_dir, "plot_6_score_change_greece_2018_2022.png"), "\n")
 # End Plot 6: ================================================================
 
 # --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
@@ -723,8 +731,8 @@ p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
   )
 
 # Save plot
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_7_all_gender_subject_score_change.png", plot = p, width = 11, height = 13, dpi = 300, bg = "white")
-cat("✅ Plot 7 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_7_all_gender_subject_score_change.png\n")
+ggsave(file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"), plot = p, width = 11, height = 13, dpi = 300, bg = "white")
+cat("✅ Plot 7 saved to: ", file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"), "\n")
 
 # End Plot 7 : ================================================================
 
@@ -810,8 +818,8 @@ p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
 
 # Step 6: Save
 dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_8_greece_rank_vs_avg_annotated_2018.png", plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
-cat("✅ Plot 8 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_8_greece_rank_vs_avg_annotated_2018.png\n")
+ggsave(file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"), plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
+cat("✅ Plot 8 saved to: ", file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"), "\n")
 # End Plot 8 : ================================================================
 
 # --- PLOT 9:  ---
@@ -869,9 +877,9 @@ p <- ggplot(heatmap_data, aes(x = Subject, y = CNT, fill = GenderGap)) +
 
 # Step 5: Save
 dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_9_gender_gap_heatmap_with_glcm.png", plot = p, width = 11, height = 12, dpi = 300, bg = "white")
+ggsave(file.path(figures_dir, "plot_9_gender_gap_heatmap_with_glcm.png"), plot = p, width = 11, height = 12, dpi = 300, bg = "white")
 
-cat("✅ Plot 9 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_9_gender_gap_heatmap_with_glcm.png\n")
+cat("✅ Plot 9 saved to: ", file.path(figures_dir, "plot_9_gender_gap_heatmap_with_glcm.png"), "\n")
 # End Plot 9: ================================================================
 
 # --- PLOT 10:  ---
@@ -947,12 +955,12 @@ p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
 # Show and save
 print(p)
 ggsave(
-  filename = "/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/10_plot_oecd_continent_greece_china_arrow.png",
+  filename = file.path(figures_dir, "10_plot_oecd_continent_greece_china_arrow.png"),
   plot = p,
   width = 10,
   height = 7,
   dpi = 300,
   bg = "white"
 )
-cat("✅ Plot 10 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/10_plot_oecd_continent_greece_china_arrow.png\n")
+cat("✅ Plot 10 saved to: ", file.path(figures_dir, "10_plot_oecd_continent_greece_china_arrow.png"), "\n")
 # End Plot 10: ================================================================
