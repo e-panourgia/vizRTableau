@@ -1,6 +1,8 @@
 # intall packages # Load required libraries
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 install.packages("treemapify")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggtext")) install.packages("ggtext")
 
 suppressPackageStartupMessages({
     library(dplyr)
@@ -12,11 +14,11 @@ suppressPackageStartupMessages({
     library(fs)
     library(tidyverse)
     library(treemapify)
+    library(ggtext)
 })
 
-if (!dir.exists("../figures")) {
-  dir.create("../figures")
-}
+# Create figures folder if it doesn't exist
+if (!dir.exists("../figures")) dir.create("../figures")
 
 ### Load and Explore Data for 2018 
 # Load 2018 
@@ -873,168 +875,84 @@ cat("✅ Plot 9 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTa
 # End Plot 9: ================================================================
 
 # --- PLOT 10:  ---
-# Step 1: Define region map
-region_map <- c(
-  # Europe
-  "Greece" = "Europe", "France" = "Europe", "Germany" = "Europe", "Italy" = "Europe",
-  "Spain" = "Europe", "Poland" = "Europe", "Finland" = "Europe", "Estonia" = "Europe",
-  "United Kingdom" = "Europe", "Netherlands" = "Europe", "Sweden" = "Europe",
-  "Austria" = "Europe", "Belgium" = "Europe", "Portugal" = "Europe", "Hungary" = "Europe",
-  # Asia
-  "Japan" = "Asia", "Korea" = "Asia", "Singapore" = "Asia", "Vietnam" = "Asia",
-  "Macao" = "Asia", "Hong Kong" = "Asia", "Chinese Taipei" = "Asia", "Thailand" = "Asia",
-  "Malaysia" = "Asia", "Indonesia" = "Asia", "Kazakhstan" = "Asia",
-  # Americas
-  "Canada" = "Americas", "United States" = "Americas", "Mexico" = "Americas",
-  "Brazil" = "Americas", "Argentina" = "Americas", "Chile" = "Americas",
-  "Colombia" = "Americas", "Peru" = "Americas", "Uruguay" = "Americas",
-  # Middle East
-  "Israel" = "Middle East", "Qatar" = "Middle East", "Saudi Arabia" = "Middle East",
-  "Jordan" = "Middle East", "United Arab Emirates" = "Middle East",
-  # Africa
-  "Morocco" = "Africa", "Tunisia" = "Africa"
+# Step 1: OECD membership
+oecd_members <- c(
+  "Albania" = FALSE, "Argentina" = FALSE, "Australia" = TRUE, "Austria" = TRUE,
+  "Belgium" = TRUE, "Brazil" = FALSE, "Bulgaria" = FALSE, "Canada" = TRUE,
+  "Chile" = TRUE, "Colombia" = TRUE, "Costa Rica" = TRUE, "Croatia" = FALSE,
+  "Czech Republic" = TRUE, "Denmark" = TRUE, "Estonia" = TRUE, "Finland" = TRUE,
+  "France" = TRUE, "Georgia" = FALSE, "Germany" = TRUE, "Greece" = TRUE,
+  "Hong Kong" = FALSE, "Hungary" = TRUE, "Iceland" = TRUE, "India" = FALSE,
+  "Indonesia" = FALSE, "Ireland" = TRUE, "Israel" = TRUE, "Italy" = TRUE,
+  "Japan" = TRUE, "Jordan" = FALSE, "Kazakhstan" = FALSE, "Korea" = TRUE,
+  "Latvia" = TRUE, "Lithuania" = TRUE, "Luxembourg" = TRUE, "Malaysia" = FALSE,
+  "Mexico" = TRUE, "Moldova" = FALSE, "Montenegro" = FALSE, "Morocco" = FALSE,
+  "Netherlands" = TRUE, "New Zealand" = TRUE, "North Macedonia" = FALSE,
+  "Norway" = TRUE, "Peru" = FALSE, "Philippines" = FALSE, "Poland" = TRUE,
+  "Portugal" = TRUE, "Qatar" = FALSE, "Romania" = FALSE, "Russian Federation" = FALSE,
+  "Saudi Arabia" = FALSE, "Serbia" = FALSE, "Singapore" = FALSE, "Slovak Republic" = TRUE,
+  "Slovenia" = TRUE, "Spain" = TRUE, "Sweden" = TRUE, "Switzerland" = TRUE,
+  "Thailand" = FALSE, "Tunisia" = FALSE, "Turkey" = TRUE, "Ukraine" = FALSE,
+  "United Arab Emirates" = FALSE, "United Kingdom" = TRUE, "United States" = TRUE,
+  "Uruguay" = FALSE, "Vietnam" = FALSE, "Chinese Taipei" = FALSE,
+  "B-S-J-Z (China)" = FALSE
 )
-
-# Step 2: Add Region column
-data_region <- newdata %>%
-  mutate(Region = region_map[as.character(CNT)])
-
-# Step 3: Average subject scores by region
-region_scores <- data_region %>%
-  filter(!is.na(Region)) %>%
-  group_by(Region) %>%
-  summarise(
-    Math = mean(MATH, na.rm = TRUE),
-    Reading = mean(READ, na.rm = TRUE),
-    Science = mean(SCIE, na.rm = TRUE),
-    Total = (Math + Reading + Science) / 3,
-    .groups = "drop"
-  )
-
-# Step 4: Add Greece separately
-greece_scores <- newdata %>%
-  filter(CNT == "Greece") %>%
-  summarise(
-    Math = mean(MATH, na.rm = TRUE),
-    Reading = mean(READ, na.rm = TRUE),
-    Science = mean(SCIE, na.rm = TRUE)
-  ) %>%
-  mutate(
-    Total = (Math + Reading + Science) / 3,
-    Region = "Greece"
-  )
-
-# Step 5: Combine and pivot to long format
-plot_data <- bind_rows(region_scores, greece_scores) %>%
-  pivot_longer(cols = c(Math, Reading, Science, Total),
-               names_to = "Subject", values_to = "Score")
-
-# Step 6: Reorder region separately within each subject
-plot_data <- plot_data %>%
-  group_by(Subject) %>%
-  mutate(Region = fct_reorder(Region, Score)) %>%
-  ungroup()
-
-# Step 7: Plot
-p <- ggplot(plot_data, aes(x = Region, y = Score, fill = Region == "Greece")) +
-  geom_col() +
-  facet_wrap(~ Subject, scales = "free_x") +
-  scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray80"), guide = "none") +
+# Step 2: Continent mapping
+continent_map <- list(
+  "Europe" = c("Austria", "Belgium", "France", "Germany", "Greece", "Italy", "Netherlands", "Spain", "Sweden", "Switzerland", "United Kingdom", "Poland", "Czech Republic", "Portugal", "Slovak Republic", "Hungary", "Finland", "Ireland", "Denmark", "Estonia", "Latvia", "Lithuania", "Slovenia", "Norway", "Iceland", "Luxembourg"),
+  "Asia" = c("Japan", "Korea", "Singapore", "Hong Kong", "Chinese Taipei", "Malaysia", "Thailand", "Vietnam", "B-S-J-Z (China)", "Indonesia", "Kazakhstan", "Qatar", "Saudi Arabia", "Jordan", "United Arab Emirates", "Israel"),
+  "Americas" = c("United States", "Canada", "Mexico", "Chile", "Colombia", "Costa Rica", "Argentina", "Brazil", "Uruguay", "Peru"),
+  "Africa" = c("Morocco", "Tunisia"),
+  "Oceania" = c("Australia", "New Zealand")
+)
+# Step 3: Build dataset
+continent_lookup <- unlist(lapply(names(continent_map), function(continent) {
+  setNames(rep(continent, length(continent_map[[continent]])), continent_map[[continent]])
+}))
+all_countries <- names(oecd_members)
+plot_df <- data.frame(
+  Country = all_countries,
+  OECD = unname(unlist(oecd_members)),
+  Continent = continent_lookup[all_countries]
+)
+plot_df <- plot_df[!is.na(plot_df$Continent), ]
+plot_df$Count <- 1
+summary_df <- aggregate(Count ~ Continent + OECD, data = plot_df, FUN = sum)
+# Heights for arrows
+europe_total <- sum(summary_df$Count[summary_df$Continent == "Europe"])
+asia_non_oecd <- summary_df$Count[summary_df$Continent == "Asia" & summary_df$OECD == FALSE]
+# Step 4: Final Plot (complete chain!)
+p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
+  geom_bar(stat = "identity", position = "stack", color = "black") +
+  scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray70"),
+                    labels = c("Non-OECD", "OECD"), name = "Membership") +
   labs(
-    title = "Average PISA 2018 Scores by Region and Greece",
-    subtitle = "Each subject sorted independently; Greece highlighted in blue",
-    x = NULL, y = "Average Score"
+    title = "<b>Number of PISA 2018 Countries per Continent by OECD Membership (PISA 2018)</b>",
+    subtitle = "Greece (Europe, OECD) and China (Asia, Non-OECD)",
+    x = "Continent",
+    y = "Number of Countries"
   ) +
+  annotate("text", x = 4.5, y = europe_total + 2, label = "Greece", color = "red", size = 5, hjust = 0) +
+  annotate("segment", x = 4.4, xend = 4, y = europe_total + 1.5, yend = europe_total - 1,
+           arrow = arrow(length = unit(0.25, "cm")), color = "red", linewidth = 1) +
+  annotate("text", x = 2.5, y = asia_non_oecd + 2, label = "China", color = "red", size = 5, hjust = 1) +
+  annotate("segment", x = 2.6, xend = 3, y = asia_non_oecd + 1.5, yend = asia_non_oecd - 0.5,
+           arrow = arrow(length = unit(0.25, "cm")), color = "red", linewidth = 1) +
   theme_minimal(base_size = 14) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    strip.text = element_text(face = "bold"),
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5)
+    plot.title = ggtext::element_markdown(),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
   )
-
-# Step 8: Save
-dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_10_plot_regional_comparison_greece_sorted_facets.png", plot = p,
-       width = 12, height = 7, dpi = 300, bg = "white")
-
-cat("✅ Plot 10 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_10_plot_regional_comparison_greece_sorted_facets.png\n")
+# Show and save
+print(p)
+ggsave(
+  filename = "/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/10_plot_oecd_continent_greece_china_arrow.png",
+  plot = p,
+  width = 10,
+  height = 7,
+  dpi = 300,
+  bg = "white"
+)
+cat("✅ Plot 10 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/10_plot_oecd_continent_greece_china_arrow.png\n")
 # End Plot 10: ================================================================
-
-
-
-
-# --- PLOT 11: Treemap of Total PISA Scores by Region (Scaled + Outlined) ---
-
-# Set CRAN mirror and load/install required packages
-options(repos = c(CRAN = "https://cloud.r-project.org"))
-if (!require("treemapify")) install.packages("treemapify")
-if (!require("dplyr")) install.packages("dplyr")
-if (!require("ggplot2")) install.packages("ggplot2")
-if (!require("fs")) install.packages("fs")
-library(treemapify)
-library(dplyr)
-library(ggplot2)
-library(fs)
-
-# Define region mapping
-region_map <- c(
-  "Greece" = "Europe", "France" = "Europe", "Germany" = "Europe", "Italy" = "Europe",
-  "Spain" = "Europe", "Poland" = "Europe", "Finland" = "Europe", "Estonia" = "Europe",
-  "United Kingdom" = "Europe", "Netherlands" = "Europe", "Sweden" = "Europe",
-  "Austria" = "Europe", "Belgium" = "Europe", "Portugal" = "Europe", "Hungary" = "Europe",
-  "Japan" = "Asia", "Korea" = "Asia", "Singapore" = "Asia", "Vietnam" = "Asia",
-  "Macao" = "Asia", "Hong Kong" = "Asia", "Chinese Taipei" = "Asia", "Thailand" = "Asia",
-  "Malaysia" = "Asia", "Indonesia" = "Asia", "Kazakhstan" = "Asia",
-  "Canada" = "Americas", "United States" = "Americas", "Mexico" = "Americas",
-  "Brazil" = "Americas", "Argentina" = "Americas", "Chile" = "Americas",
-  "Colombia" = "Americas", "Peru" = "Americas", "Uruguay" = "Americas",
-  "Israel" = "Middle East", "Qatar" = "Middle East", "Saudi Arabia" = "Middle East",
-  "Jordan" = "Middle East", "United Arab Emirates" = "Middle East",
-  "Morocco" = "Africa", "Tunisia" = "Africa"
-)
-
-# Apply region mapping to dataset (assumes 'newdata' is preloaded with MATH, READ, SCIE, CNT)
-data_region <- newdata %>%
-  mutate(Region = region_map[as.character(CNT)])
-
-# Average total score per region (excluding Greece)
-region_scores <- data_region %>%
-  filter(!is.na(Region)) %>%
-  group_by(Region) %>%
-  summarise(Total = mean(c(MATH, READ, SCIE), na.rm = TRUE), .groups = "drop")
-
-# Compute Greece separately
-greece_score <- newdata %>%
-  filter(CNT == "Greece") %>%
-  summarise(Total = mean(c(MATH, READ, SCIE), na.rm = TRUE)) %>%
-  mutate(Region = "Greece")
-
-# Combine all
-plot_data_11 <- bind_rows(region_scores, greece_score)
-
-# Amplify score differences for visual impact
-plot_data_11 <- plot_data_11 %>%
-  mutate(ScoreArea = (Total - min(Total))^2)
-
-# Create treemap with visible rectangle borders
-p11 <- ggplot(plot_data_11, aes(area = ScoreArea, fill = Region == "Greece", label = Region)) +
-  geom_treemap(color = "white", size = 1) +  # white borders between tiles
-  geom_treemap_text(color = "black", place = "centre", grow = TRUE, reflow = TRUE) +
-  scale_fill_manual(values = c("TRUE" = "#1E90FF", "FALSE" = "gray80"), guide = "none") +
-  labs(
-    title = "Treemap of Total PISA 2018 Scores by Region",
-    subtitle = "Box size ∝ (Score − Min)² — visual exaggeration; Greece in blue"
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5)
-  )
-
-# Save plot
-dir_create("figures")
-ggsave("/Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_11_treemap_scaled_with_borders.png", plot = p11,
-       width = 10, height = 7, dpi = 300, bg = "white")
-
-cat("✅ Plot 11 saved to: /Users/evangeliapanourgia/Desktop/pisa_refactor/vizRTableau/figures/plot_11_treemap_scaled_with_borders.png\n")
