@@ -737,7 +737,7 @@ p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
   ) +
   labs(
     title = "Score Change by Country, Gender, and Subject (2018–2022)",
-    subtitle = "🟢 = Girls outperform Boys | 🔴 = Boys outperform Girls | ⚪ = No Change | Greece outlined in 🔵",
+    subtitle = "🟢 = Score improved from 2018 to 2022 | 🔴 = Score declined | ⚪ = No change | Greece outlined in 🔵",
     x = "Gender–Subject",
     y = NULL
   ) +
