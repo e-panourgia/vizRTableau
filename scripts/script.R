@@ -332,7 +332,7 @@ p2 <- ggplot(long_df, aes(x = "", y = Score)) +
   theme_minimal(base_size = 14) +
   theme(
     strip.text = element_text(face = "bold", size = 13),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
     legend.position = "top",
     legend.box = "horizontal",
     legend.text = element_text(size = 11),
@@ -404,7 +404,7 @@ p3 <- ggplot(plot_data, aes(x = reorder(Country, -GLCM_Mean), y = GLCM_Mean, fil
   ) +
   theme_minimal(base_size = 14) +
   theme(
-    plot.title = element_text(face = "bold", hjust = 0.5, size = 15),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5, size = 11),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.ticks.x = element_blank(),
@@ -516,7 +516,7 @@ p_gendered <- ggplot(plot_data, aes(x = Subject, y = Score, fill = BarGroup)) +
   ) +
   theme_minimal(base_size = 14) +
   theme(
-    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
     axis.text.x = element_text(face = "bold"),
     legend.position = "top",
     legend.text = element_text(size = 11)
@@ -606,10 +606,10 @@ plot_male   <- plot_gender_distance(greece_summary %>% filter(Gender == "Male"),
 # --- PLOT 5: Scatter/arrow plots of Greece's Global Competence vs Academic mean by gender ---
 # Shows, for each gender, how Greece's mean Global Competence compares to its mean academic score, with a perpendicular distance arrow.
 g <- arrangeGrob(
-  plot_female + ggtitle("Greece – Female"),
-  plot_male + ggtitle("Greece – Male"),
+  plot_female + ggtitle("Greece – Female") + theme(plot.title = element_text(face = "bold", size = 16, hjust = 0.5)),
+  plot_male + ggtitle("Greece – Male") + theme(plot.title = element_text(face = "bold", size = 16, hjust = 0.5)),
   ncol = 2,
-  top = textGrob("Greece's Global Competence vs Academic Scores by Gender", gp = gpar(fontsize = 15, fontface = "bold"))
+  top = textGrob("Greece's Global Competence vs Academic Scores by Gender (PISA 2018)", gp = gpar(fontsize = 16, fontface = "bold"))
 )
 ggsave(file.path(figures_dir, "plot_5_glcm_vs_academic_gender_greece_dist_legend.png"), g, width = 13, height = 6, dpi = 300, bg = "white")
 cat("✅ Plot 5 saved to: ", file.path(figures_dir, "plot_5_glcm_vs_academic_gender_greece_dist_legend.png"), "\n")
@@ -672,8 +672,7 @@ ggsave(file.path(figures_dir, "plot_6_score_change_greece_2018_2022.png"), plot 
 cat("✅ Plot 6 saved to: ", file.path(figures_dir, "plot_6_score_change_greece_2018_2022.png"), "\n")
 # End Plot 6: ================================================================
 
-# --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
-# --- PLOT 7:  Heatmap of all subject Score Change by Country (2018–2022)---
+# --- PLOT 7: Heatmap of Score Change by Country, Gender, and Subject (2018–2022) ---
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -689,36 +688,59 @@ get_mean_scores <- function(data, year_label) {
     mutate(Year = year_label)
 }
 
+# Calculate means for each year
 mean_2018 <- get_mean_scores(data_2018, "2018")
 mean_2022 <- get_mean_scores(data_2022, "2022")
 
-# Combine and calculate change
+# Combine, compute score changes, and clean up
 score_changes <- bind_rows(mean_2018, mean_2022) %>%
   pivot_wider(names_from = Year, values_from = Mean) %>%
   mutate(Change = `2022` - `2018`) %>%
   drop_na(CNT, Gender, Subject, Change) %>%
   filter(Change != 0) %>%
-  mutate(Combo = paste(Gender, Subject, sep = "_"),
-         IsGreece = CNT == "Greece")
+  mutate(
+    Combo = case_when(
+      Gender == "Male" & Subject == "MATH" ~ "Boys – Math",
+      Gender == "Male" & Subject == "READ" ~ "Boys – Reading",
+      Gender == "Male" & Subject == "SCIE" ~ "Boys – Science",
+      Gender == "Female" & Subject == "MATH" ~ "Girls – Math",
+      Gender == "Female" & Subject == "READ" ~ "Girls – Reading",
+      Gender == "Female" & Subject == "SCIE" ~ "Girls – Science",
+      TRUE ~ paste(Gender, Subject)
+    ),
+    IsGreece = CNT == "Greece"
+  )
 
-# Order countries by average change for visual consistency
+# Reorder countries by average change
 score_changes <- score_changes %>%
   group_by(CNT) %>%
   mutate(AvgChange = mean(Change, na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(CNT = reorder(CNT, AvgChange))
 
-# Create output folder
-dir_create("figures")
+# Ensure output folder exists
+figures_dir <- file.path(project_dir, "figures")
+if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
 
-# Plot with thick blue outline for Greece
+# Plot heatmap
 p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
   geom_tile(width = 1, height = 1, color = "grey90") +
-  geom_tile(data = filter(score_changes, IsGreece), 
-            aes(x = Combo, y = CNT), 
-            width = 1, height = 1, color = "blue", linewidth = 1.2, fill = NA) +
-  scale_fill_gradient2(low = "firebrick", mid = "white", high = "darkgreen", midpoint = 0, name = "Score Change") +
-  labs(title = "Score Change (2018–2022) by Country, Gender, and Subject", x = "Gender–Subject", y = NULL) +
+  geom_tile(
+    data = filter(score_changes, IsGreece),
+    aes(x = Combo, y = CNT),
+    width = 1, height = 1,
+    color = "blue", linewidth = 1.2, fill = NA
+  ) +
+  scale_fill_gradient2(
+    low = "firebrick", mid = "white", high = "darkgreen", midpoint = 0,
+    name = "Score Change"
+  ) +
+  labs(
+    title = "Score Change by Country, Gender, and Subject (2018–2022)",
+    subtitle = "🟢 = Girls outperform Boys | 🔴 = Boys outperform Girls | ⚪ = No Change | Greece outlined in 🔵",
+    x = "Gender–Subject",
+    y = NULL
+  ) +
   theme_minimal(base_size = 14) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -727,14 +749,17 @@ p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
     panel.border = element_blank(),
     axis.ticks = element_blank(),
     plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12, face = "italic"),
     legend.position = "right"
   )
 
-# Save plot
-ggsave(file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"), plot = p, width = 11, height = 13, dpi = 300, bg = "white")
-cat("✅ Plot 7 saved to: ", file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"), "\n")
+# Save the plot
+ggsave(file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"),
+       plot = p, width = 11, height = 13, dpi = 300, bg = "white")
 
-# End Plot 7 : ================================================================
+cat("✅ Plot 7 saved to:", file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"), "\n")
+# --- End Plot 7 ------------------------------------------------------------------
+
 
 # --- PLOT 8:  
 # --- Plot: Greece's Rank vs Global Average (PISA 2018) ---
@@ -812,7 +837,7 @@ p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
   ) +
   theme_minimal(base_size = 14) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
     axis.title.y = element_text(margin = margin(r = 10)),
     legend.position = "top",
     axis.text.y = element_text(face = "bold", color = "#0072B2", size = 14)
@@ -869,16 +894,16 @@ p <- ggplot(heatmap_data, aes(x = Subject, y = CNT, fill = GenderGap)) +
   scale_fill_gradient2(low = "darkred", mid = "white", high = "darkgreen", midpoint = 0,
                        name = "Gap (F − M)") +
   labs(
-    title = "Gender Gap in PISA 2018 Scores by Country and Subject (incl. Global Competence)",
-    subtitle = "Positive = Girls outperform Boys | Greece outlined in blue",
+    title = "Gender Gap Scores by Country and Domain (PISA 2018)",
+    subtitle = "🟢 = Girls outperform Boys |🔴 = Boys outperform Girls | ⚪ = No Change | Greece outlined in 🔵",
     x = "Subject", y = "Country"
   ) +
   theme_minimal(base_size = 13) +
   theme(
     axis.text.y = element_text(size = 8),
     axis.text.x = element_text(face = "bold"),
-    plot.title = element_text(face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5)
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = ggtext::element_markdown(hjust = 0.5)
   )
 
 # Step 5: Save
@@ -979,7 +1004,7 @@ p <- ggplot(summary_df, aes(x = Continent, y = Count, fill = OECD)) +
            arrow = arrow(length = unit(0.25, "cm")), color = "red", linewidth = 1) +
   theme_minimal(base_size = 14) +
   theme(
-    plot.title = ggtext::element_markdown(),
+    plot.title = ggtext::element_markdown(face = "bold", size = 16, hjust = 0.5),
     axis.title.x = element_text(face = "bold"),
     axis.title.y = element_text(face = "bold")
   )
