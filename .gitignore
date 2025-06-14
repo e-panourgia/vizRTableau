@@ -177,3 +177,6 @@ cython_debug/
 Rplots.pdf
 
 vizRTableau/pisa/data/raw/STU_QQQ_SAS/
+
+# ignore macos 
+.DS_Store
