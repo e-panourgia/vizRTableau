@@ -760,14 +760,7 @@ ggsave(file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"),
 cat("✅ Plot 7 saved to:", file.path(figures_dir, "plot_7_all_gender_subject_score_change.png"), "\n")
 # --- End Plot 7 ------------------------------------------------------------------
 
-
-# --- PLOT 8:  
-# --- Plot: Greece's Rank vs Global Average (PISA 2018) ---
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(fs)
-
+# ===================== PLOT 8: Greece’s Global Rank by Subject and Overall (PISA 2018) =====================
 # Step 1: Compute average scores per country
 country_averages_2018 <- data_2018 %>%
   group_by(CNT) %>%
@@ -780,7 +773,7 @@ country_averages_2018 <- data_2018 %>%
   filter(!is.na(Math), !is.na(Reading), !is.na(Science)) %>%
   mutate(Total = (Math + Reading + Science) / 3)
 
-# Step 2: Rank globally (lower is better)
+# Step 2: Rank globally (higher score = better rank)
 ranked <- country_averages_2018 %>%
   mutate(
     Math_Rank = min_rank(desc(Math)),
@@ -796,7 +789,7 @@ greece_ranks <- ranked %>%
   pivot_longer(everything(), names_to = "Subject", values_to = "GreeceRank") %>%
   mutate(
     Subject = gsub("_Rank", "", Subject),
-    Subject = recode(Subject, Total = "Overall"),  # Optional: rename "Total" to "Overall"
+    Subject = recode(Subject, Total = "Overall"),
     Subject = factor(Subject, levels = c("Math", "Reading", "Science", "Overall"))
   )
 
@@ -806,28 +799,38 @@ average_rank <- round(mean(1:total_countries))
 
 plot_data <- greece_ranks %>%
   mutate(
-    `Countries Ranked Higher` = GreeceRank - 1,
-    `Countries Ranked Lower` = total_countries - GreeceRank
+    `Countries Ranked Better` = GreeceRank - 1,
+    `Countries Ranked Worse` = total_countries - GreeceRank
   ) %>%
-  select(Subject, `Countries Ranked Higher`, `Countries Ranked Lower`) %>%
+  select(Subject, `Countries Ranked Better`, `Countries Ranked Worse`) %>%
   pivot_longer(cols = starts_with("Countries"),
                names_to = "Category", values_to = "Count") %>%
-  mutate(Category = factor(Category, levels = c("Countries Ranked Higher", "Countries Ranked Lower")))
+  mutate(Category = factor(Category, levels = c("Countries Ranked Worse", "Countries Ranked Better")))
 
-# Step 5: Plot
+# Step 5: Add rank labels above blue bars
+label_data <- greece_ranks %>%
+  mutate(
+    Category = "Countries Ranked Worse",
+    Count = total_countries - GreeceRank,
+    Label = paste0("Rank: ", GreeceRank)
+  )
+
+# Step 6: Plot
 p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
   geom_bar(stat = "identity") +
+  geom_text(data = label_data, aes(x = Subject, y = Count + 1.5, label = Label),
+            inherit.aes = FALSE, size = 5, fontface = "bold", color = "#1E90FF") +
   geom_hline(yintercept = average_rank, linetype = "dashed", color = "red", linewidth = 0.8) +
   annotate("text", x = Inf, y = average_rank + 1.5,
            label = "Global Average Rank",
            color = "red", size = 5, hjust = 1, fontface = "bold") +
   scale_fill_manual(
-    values = c("Countries Ranked Higher" = "#1E90FF", "Countries Ranked Lower" = "gray85"),
+    values = c("Countries Ranked Better" = "gray85", "Countries Ranked Worse" = "#1E90FF"),
     labels = c("Countries Ranked Worse", "Countries Ranked Better"),
     name = "Ranking Breakdown"
   ) +
   scale_y_continuous(
-    limits = c(0, total_countries),
+    limits = c(0, total_countries + 5),
     breaks = seq(0, total_countries, 10)
   ) +
   labs(
@@ -843,15 +846,15 @@ p <- ggplot(plot_data, aes(x = Subject, y = Count, fill = Category)) +
     axis.text.y = element_text(face = "bold", color = "#0072B2", size = 14)
   )
 
-# Step 6: Save
+# Step 7: Save plot
 figures_dir <- file.path(project_dir, "figures")
 if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
+
 ggsave(file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"),
        plot = p, width = 9, height = 5.5, dpi = 300, bg = "white")
+
 cat("✅ Plot 8 saved to:", file.path(figures_dir, "plot_8_greece_rank_vs_avg_annotated_2018.png"), "\n")
-
-
-# End Plot 8 : ================================================================
+# End Plot 8: ================================================================
 
 # --- PLOT 9:  ---
 library(dplyr)
@@ -912,9 +915,6 @@ ggsave(file.path(figures_dir, "plot_9_gender_gap_heatmap_with_glcm.png"), plot =
 
 cat("✅ Plot 9 saved to: ", file.path(figures_dir, "plot_9_gender_gap_heatmap_with_glcm.png"), "\n")
 # End Plot 9: ================================================================
-
-
-
 
  # --- Final Plot: Greece Arrow Points Down, Moved 2 Units Lower ---
 if (!require("ggplot2")) install.packages("ggplot2")
@@ -1016,5 +1016,3 @@ ggsave(file.path(figures_dir, "plot_10_oecd_by_continent_from_data_2018.png"),
        plot = p, width = 10, height = 7, dpi = 300, bg = "white")
 cat("✅ Plot 10 saved to:", file.path(figures_dir, "plot_10_oecd_by_continent_from_data_2018.png"), "\n")
 # End Plot 10: ================================================================
-
-
