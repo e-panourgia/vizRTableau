@@ -180,3 +180,9 @@ vizRTableau/pisa/data/raw/STU_QQQ_SAS/
 
 # ignore macos 
 .DS_Store
+# tableau files
+~*.*
+
+# Ignore all SAS format and dataset files
+*.FORMAT.SAS
+*.SAS7BDAT
