@@ -247,19 +247,18 @@ cat("✅ Plot 1 saved to: ", file.path(figures_dir, "plot_1_greece_vs_top_subjec
 
 # End Plot 1 : ================================================================
 
-
-# --- PLOT 2: Boxplots of country medians for each subject, highlighting Greece and OECD median ---
-# Define OECD countries
+# ===================== PLOT 2: Greece vs Global and OECD Medians =====================
+# Step 0: Define OECD countries
 oecd_countries <- c(
   "Australia", "Austria", "Belgium", "Canada", "Chile", "Czech Republic",
   "Denmark", "Estonia", "Finland", "France", "Germany", "Hungary",
   "Iceland", "Ireland", "Israel", "Italy", "Japan", "Korea", "Latvia",
   "Lithuania", "Luxembourg", "Mexico", "Netherlands", "New Zealand", "Norway",
   "Poland", "Portugal", "Slovak Republic", "Slovenia", "Spain", "Sweden",
-  "Switzerland", "Turkey", "United Kingdom", "United States" # "Greece",
+  "Switzerland", "Turkey", "United Kingdom", "United States"
 )
 
-# STEP 1: Compute subject medians for countries
+# Step 1: Compute country-level medians
 base_medians <- data_imputed %>%
   group_by(CNT) %>%
   summarise(
@@ -269,37 +268,44 @@ base_medians <- data_imputed %>%
     .groups = "drop"
   )
 
-# STEP 2: Compute GLCM medians (only valid ones)
 glcm_medians <- data_imputed %>%
   filter(!is.na(GLCM)) %>%
   group_by(CNT) %>%
   summarise(`Global Competence` = median(GLCM, na.rm = TRUE), .groups = "drop")
 
-# STEP 3: Merge medians
 country_medians <- full_join(base_medians, glcm_medians, by = "CNT")
 
-# STEP 4: Long format and remove missing GLCM entries
+# Step 2: Prepare long format
 long_df <- country_medians %>%
   pivot_longer(cols = Reading:`Global Competence`, names_to = "Subject", values_to = "Score") %>%
   filter(!is.na(Score))
 
-# STEP 5: Greece-only data (filtered correctly)
+# Step 3: Extract Greece medians
 greece_medians <- long_df %>%
   filter(CNT == "Greece")
 
-# STEP 6: OECD-wide medians (per subject)
-oecd_medians <- data_imputed %>%
+# Step 4: Compute OECD medians (1 per subject)
+oecd_country_medians <- data_imputed %>%
   filter(CNT %in% oecd_countries) %>%
+  group_by(CNT) %>%
   summarise(
     Reading = median(READ, na.rm = TRUE),
     Math = median(MATH, na.rm = TRUE),
     Science = median(SCIE, na.rm = TRUE),
-    `Global Competence` = median(GLCM, na.rm = TRUE)
-  ) %>%
-  pivot_longer(everything(), names_to = "Subject", values_to = "OECD_Median") %>%
-  filter(!is.na(OECD_Median))
+    `Global Competence` = median(GLCM, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# STEP 7: Rename facets
+oecd_medians <- oecd_country_medians %>%
+  pivot_longer(cols = Reading:`Global Competence`, names_to = "Subject", values_to = "Score") %>%
+  group_by(Subject) %>%
+  summarise(OECD_Median = median(Score, na.rm = TRUE), .groups = "drop")
+
+# Step 5: Create OECD median labels
+oecd_median_labels <- oecd_medians %>%
+  mutate(Label = paste0("OECD: ", round(OECD_Median, 0)))
+
+# Step 6: Subject labels
 subject_labels <- c(
   "Reading" = "Reading",
   "Math" = "Math",
@@ -307,28 +313,29 @@ subject_labels <- c(
   "Global Competence" = "Global Competence"
 )
 
-# STEP 8: Final plot
+# Step 7: Plot
 p2 <- ggplot(long_df, aes(x = "", y = Score)) +
   geom_boxplot(fill = "#e6e6e6", color = "gray50", outlier.color = "gray70", width = 0.3) +
-
-  # OECD median line
   geom_hline(data = oecd_medians, aes(yintercept = OECD_Median, linetype = "OECD Median"),
              color = "#D55E00", linewidth = 1) +
-
-  # Greece point
   geom_point(data = greece_medians, aes(x = "", y = Score, color = "Greece"), size = 3) +
-
+  geom_text(
+    data = oecd_median_labels,
+    aes(x = 1, y = OECD_Median + 7, label = Label),
+    inherit.aes = FALSE,
+    hjust = 0.5,
+    size = 4,
+    color = "#D55E00",
+    fontface = "bold"
+  ) +
   facet_wrap(~Subject, nrow = 1, labeller = labeller(Subject = subject_labels)) +
-
   labs(
     title = "Greece Compared to Global and OECD Medians (PISA 2018)",
     x = NULL, y = "Country-Level Median Score",
     color = NULL, linetype = NULL
   ) +
-
   scale_color_manual(values = c("Greece" = "#0072B2")) +
   scale_linetype_manual(values = c("OECD Median" = "dashed")) +
-
   theme_minimal(base_size = 14) +
   theme(
     strip.text = element_text(face = "bold", size = 13),
@@ -341,11 +348,34 @@ p2 <- ggplot(long_df, aes(x = "", y = Score)) +
     panel.grid.major.x = element_blank()
   )
 
-# Save final version
-ggsave(file.path(figures_dir, "plot_2_greece_filtered_glcm_boxplots.png"), plot = p2, width = 12, height = 5, dpi = 300, bg = "white")
-cat("✅ Plot 2 saved to: ", file.path(figures_dir, "plot_2_greece_filtered_glcm_boxplots.png"), "\n")
-# End Plot 2 : ================================================================
+# Step 8: Save plot
+figures_dir <- file.path(project_dir, "figures")
+if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
 
+ggsave(file.path(figures_dir, "plot_2_greece_filtered_glcm_boxplots.png"),
+       plot = p2, width = 12, height = 5, dpi = 300, bg = "white")
+
+cat("✅ Plot 2 saved to:", file.path(figures_dir, "plot_2_greece_filtered_glcm_boxplots.png"), "\n")
+
+# helping code to interpret the plot for GLCM no box 
+# Diagnose why GLCM has no visible boxplot
+cat("Diagnosing why GLCM has no visible boxplot\n")
+library(dplyr)
+
+glcm_check <- data_imputed %>%
+  filter(!is.na(GLCM)) %>%
+  group_by(CNT) %>%
+  summarise(median_glcm = median(GLCM, na.rm = TRUE)) %>%
+  summarise(
+    count = n(),
+    unique_values = n_distinct(median_glcm),
+    q1 = quantile(median_glcm, 0.25),
+    q3 = quantile(median_glcm, 0.75),
+    iqr = IQR(median_glcm)
+  )
+
+print(glcm_check)
+# End Plot 2 : ================================================================
 
 # --- PLOT 3: Greece vs Higher-Scoring Countries in Global Competence (PISA 2018) ---
 
@@ -418,7 +448,6 @@ p3 <- ggplot(plot_data, aes(x = reorder(Country, -GLCM_Mean), y = GLCM_Mean, fil
 # Step 7: Save the plot
 ggsave(file.path(figures_dir, "plot_3_glcm_plot.png"), plot = p3, width = 10, height = 6, dpi = 320, bg = "white")
 cat("✅ Plot 3 saved to: ", file.path(figures_dir, "plot_3_glcm_plot.png"), "\n")
-
 
 
 # --- Plot 4: Gendered Scores – Grouped by Gender, Pink/Blue Palette ---
