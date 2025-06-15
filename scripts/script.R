@@ -684,7 +684,7 @@ p_greece_change <- ggplot(score_change, aes(x = Subject, y = Change, fill = Gend
   scale_fill_manual(values = c("Male" = "#89CFF0", "Female" = "#FFB6C1")) +  # light blue and light pink
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
   labs(
-    title = "Score Change by Subject and Gender in Greece (2018–2022)",
+    title = "Score Change by Subject and Gender in Greece (2018 vs 2022)",
     x = "Subject",
     y = "Change in Score",
     fill = "Gender"
@@ -765,7 +765,7 @@ p <- ggplot(score_changes, aes(x = Combo, y = CNT, fill = Change)) +
     name = "Score Change"
   ) +
   labs(
-    title = "Score Change by Country, Gender, and Subject (2018–2022)",
+    title = "Score Change by Country, Gender, and Subject (2018 vs 2022)",
     subtitle = "🟢 = Score improved from 2018 to 2022 | 🔴 = Score declined | ⚪ = No change | Greece outlined in 🔵",
     x = "Gender–Subject",
     y = NULL
