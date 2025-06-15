@@ -85,4 +85,4 @@ Built using **Tableau**, this dashboard offers fully interactive exploration via
 
 ## Link to Source
 - [GitHub – Tableau Workbook](https://github.com/e-panourgia/vizRTableau/blob/main/tableau/pisa-domain-gender-advantage.twbx)
-- [`pisa_dynamic_dashboard_with_tableau.pdf`](reports/pisa_dynamic_dashboard_with_tableau.pdf) – Tableau dashboard summary and screenshots
+- [`pisa_dynamic_dashboard_with_tableau.pdf`](../reports/pisa_dynamic_dashboard_with_tableau.pdf) – Tableau dashboard summary and screenshots
