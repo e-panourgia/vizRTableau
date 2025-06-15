@@ -7,6 +7,9 @@ This project visualizes international student performance from the PISA 2018 dat
 Built using **Tableau**, this dashboard offers fully interactive exploration via maps, filters, and dynamic tables.
 
 ---
+## Dashboard Demo
+
+![Dashboard Functionality](../assets/GIF-ezgif.com-optimize.gif)
 
 ## MAP VIEW – Country Performance
 
